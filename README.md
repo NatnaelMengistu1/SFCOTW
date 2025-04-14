@@ -1,110 +1,76 @@
-# SFCOTW
-SF 
+Church JSON Generator
+Overview
+This Apex class pushes new or updated Church__c records to an external API by:
 
-**Church JSON Generator README**
+Querying records that have never been pushed or were updated since their last push.
 
-**Overview**
+Serializing the records into a JSON payload.
 
-The Church JSON Generator is an Apex solution designed to push new or updated Church__c records to an external API. The class performs the following functions:
+Storing the JSON as a Salesforce File (ContentVersion) for auditing.
 
-**Querying Records:**
-It retrieves records from the Church__c object that have either:
+Sending the JSON payload via an HTTP POST callout using a Named Credential.
 
-Never been pushed (i.e., Last_Pushed_Date__c is NULL), or
-
-Been updated after their last push (i.e., LastModifiedDate > Last_Pushed_Date__c).
-
-
-
-**JSON Generation:**
-It maps the records to an inner class (ChurchData), serializes the list into a formatted (pretty-printed) JSON string, and optionally stores this JSON file in Salesforce Files (as a ContentVersion record).
-
-Sending to an External API:
-It sends the JSON payload to an external API via an HTTP POST callout. The callout leverages a Named Credential for secure authentication, which you configure with the external API endpoint and credentials.
-
-Post-Callout Update:
-On a successful API call (HTTP status 200 or 201), the code updates each processed record's custom field Last_Pushed_Date__c with the current timestamp. This prevents unnecessary re-pushing of unchanged records.
+Updating the records' Last_Pushed_Date__c field upon a successful API response.
 
 Prerequisites
-Before deploying or running the code, ensure the following is set up in your Salesforce environment:
+Custom Field on Church__c:
 
-Custom Field on Church__c Object:
-
-Field Name: Last_Pushed_Date__c
-
-Type: Date/Time
-(This field tracks when a church record was last pushed to the external system.)
+Last_Pushed_Date__c (Date/Time) – used to track the last push timestamp.
 
 Named Credential:
 
-Example Name: My_External_API
+Name: My_External_API
 
-URL: Set to the base URL of your external API (e.g., https://google.com or your actual API endpoint).
+URL: e.g., https://google.com (or your actual API base URL)
 
-Authentication:
-
-Identity Type: Named Principal
-
-Authentication Protocol: e.g., Password Authentication
+Authentication: Use Password Authentication with:
 
 Username: gmail123
 
 Password: kitkati1243
 
-Note: Do not hard code these credentials in your Apex code. Use a Named Credential for secure management.
+API Endpoint Adjustment:
+Replace yourEndpointPath in the code with your actual API path.
 
-API Endpoint Adjustments:
+Deployment & Execution
+Deploy the Apex Class:
 
-Replace 'yourEndpointPath' in the code with the relative path for your API callout.
+Copy the provided Apex code into a new Apex class (e.g., ChurchJSONGenerator) in the Developer Console.
 
-**Deployment Steps**
-Create Apex Class:
+Verify the Named Credential:
 
-Open the Developer Console in your Salesforce org.
+Ensure My_External_API is set up correctly in Setup > Named Credentials.
 
-Create a new Apex class (e.g., ChurchJSONGenerator) and paste the full code (provided below).
+Execute the Code:
 
-Save and compile the class.
+In the Developer Console’s Execute Anonymous window, run:
 
-Verify Named Credential:
+apex
+Copy
+ChurchJSONGenerator.pushNewOrUpdatedChurches();
+Check Results:
 
-Go to Setup → Named Credentials and confirm your Named Credential (My_External_API) is configured as described.
+Review the debug logs for HTTP callout responses.
 
-Custom Field Check:
+Verify that the file ChurchData.json appears under the Files tab.
 
-Ensure that the Church__c object includes the custom field Last_Pushed_Date__c with the correct Date/Time type.
-
-**Execution**
-To push new or updated church records to your external API:
-
-Open the Developer Console.
-
-Go to Debug → Open Execute Anonymous Window.
-
-
-
-**Code Details**
-
+Code Overview
 Query Filtering:
+Retrieves Church__c records where:
 
-The SOQL query filters for records where Last_Pushed_Date__c is NULL or LastModifiedDate > Last_Pushed_Date__c. This logic ensures only new or changed records are processed.
+Last_Pushed_Date__c is NULL
 
-Data Mapping:
+OR LastModifiedDate > Last_Pushed_Date__c
 
-Each queried record is mapped into a ChurchData inner class, which mirrors the field definitions of the Church__c object.
-
-JSON Serialization:
-
-The list of mapped records is serialized into a pretty-printed JSON string using JSON.serializePretty().
+Mapping & Serialization:
+Maps records into an inner class (ChurchData) then converts the list into a pretty-printed JSON string.
 
 File Storage:
-
-The code creates a ContentVersion record to store the generated JSON as a file in Salesforce Files. This provides an audit trail and a backup of the pushed data.
+The JSON payload is stored in Salesforce Files via a ContentVersion record.
 
 HTTP Callout:
+Uses a Named Credential (callout:My_External_API/yourEndpointPath) to securely authenticate and send the JSON.
 
-An HTTP POST request is built using the Named Credential (callout:My_External_API/yourEndpointPath). The request sends the JSON string with a Content-Type header of application/json.
+Record Update:
+Upon a successful response (HTTP 200 or 201), Last_Pushed_Date__c is updated to the current timestamp.
 
-Post-Callout Update:
-
-After a successful API response (HTTP status code 200 or 201), the code updates the Last_Pushed_Date__c field for each processed record to the current timestamp, ensuring that further pushes only include new or updated records.
