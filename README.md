@@ -14,8 +14,9 @@ Never been pushed (i.e., Last_Pushed_Date__c is NULL), or
 
 Been updated after their last push (i.e., LastModifiedDate > Last_Pushed_Date__c).
 
-**
-JSON Generation:**
+
+
+**JSON Generation:**
 It maps the records to an inner class (ChurchData), serializes the list into a formatted (pretty-printed) JSON string, and optionally stores this JSON file in Salesforce Files (as a ContentVersion record).
 
 Sending to an External API:
